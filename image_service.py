@@ -6,9 +6,10 @@ Author: Francis Kogge
 Date: 02/28/2022
 """
 
-from PIL import Image
 import os
 import base64
+from PIL import Image
+
 
 THUMBNAIL_SIZE = (50, 50)
 
@@ -44,21 +45,6 @@ def transform(image_model):
             image.save('./' + image_model.filename)
 
 
-def split_resize_args(args):
-    """
-    Splits the arguments provided for the resize command.
-    :param args: resize command arguments
-    :return: (width, length) pair
-    """
-    if ',' in args:
-        width, height = args.split(',')
-    else:
-        # If separated by whitespace
-        width, height = list(filter(None, args.split(' ')))
-
-    return width.strip(), height.strip()
-
-
 def get_image_format(file_storage_obj):
     """
     Returns the image file format.
@@ -69,6 +55,11 @@ def get_image_format(file_storage_obj):
 
 
 def get_base64_encoding(image_filename):
+    """
+    Returns the base64 encoding of the given image file.
+    :param image_filename: image file name
+    :return: base64 encoded string
+    """
     with open(image_filename, 'rb') as f:
         return base64.b64encode(f.read())
 
@@ -85,11 +76,36 @@ def create_temp_image(file_storage_obj, filename):
 
 
 def delete_temp_image(filename):
+    """
+    Removes the given file from the current directory.
+    :param filename: name of the file
+    """
     os.remove(filename)
     print('deleted temporary image: {}'.format(filename))
 
 
+def split_resize_args(args):
+    """
+    Splits the arguments provided for the resize command.
+    :param args: resize command arguments
+    :return: (width, length) pair
+    """
+    if ',' in args:
+        width, height = args.split(',')
+    else:
+        # If separated by whitespace
+        width, height = list(filter(None, args.split(' ')))
+
+    return width.strip(), height.strip()
+
+
 def invalid_command_list(command_list):
+    """
+    Performs validation checks on the transformation command list. If it is
+    found to be invalid, an appropriate error message is returned.
+    :param command_list: transformation command list
+    :return: error message if command list is invalid, otherwise None if valid
+    """
     for command, args in command_list.items():
         # Any command that is not rotate or resize does not accept any arguments
         if command not in {'rotate', 'resize'} and args:
@@ -108,3 +124,4 @@ def invalid_command_list(command_list):
             else:
                 if not width.isnumeric() or not height.isnumeric():
                     return command + ': invalid value, must be a pair of integers (width, height)'
+    return None

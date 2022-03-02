@@ -11,7 +11,7 @@ from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from image_model import ImageModel
 
-VALID_IMAGE_FORMATS = {'png', 'jpeg', 'jpg', 'tiff', 'gif'}
+VALID_IMAGE_FORMATS = {'png', 'jpeg', 'jpg', 'gif'}
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -58,7 +58,7 @@ def get_transformed_image():
     file_data = file_service.get_file_data(filename)
     file_service.delete_temp_image(filename)
 
-    return send_file(file_data, mimetype='image/{}'.format(image_format))
+    return send_file(file_data, mimetype=file_storage_obj.mimetype)
 
 
 def invalid_command_list(command_list):

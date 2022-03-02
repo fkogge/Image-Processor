@@ -6,13 +6,12 @@ Author: Francis Kogge
 02/28/2022
 """
 
-import views
-import image_service
-from flask import Flask, request, jsonify
+import file_service
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from image_model import ImageModel
 
-VALID_IMAGE_FORMATS = {'png', 'jpeg', 'jpg', 'gif'}
+VALID_IMAGE_FORMATS = {'png', 'jpeg', 'jpg', 'tiff', 'gif'}
 
 app = Flask(__name__)
 cors = CORS(app)
@@ -31,35 +30,62 @@ def get_transformed_image():
     """
     # Validate file is in the request body
     if not request.files:
-        return jsonify('Error: no image file provided'), 400
+        return jsonify({'Error': 'no image file provided'}), 400
 
     # Validate transformation command list is in request body form data
     if not request.form:
-        return jsonify('Error: no transformation command provided'), 400
-    file_storage_obj = request.files['base64ImageString']
+        return jsonify({'Error': 'no transformation command provided'}), 400
+    file_storage_obj = request.files['imageFile']
 
     # Validate image file format is valid
-    image_format = image_service.get_image_format(file_storage_obj)
+    image_format = file_service.get_image_file_format(file_storage_obj)
     if image_format not in VALID_IMAGE_FORMATS:
         return jsonify('Invalid image format, must be one of {}'
                        .format(list(VALID_IMAGE_FORMATS))), 400
 
     # Validate command parameter values, or lack thereof
     command_list = dict(request.form)
-    error_msg = image_service.invalid_command_list(command_list)
+    error_msg = invalid_command_list(command_list)
     if error_msg:
-        return error_msg, 400
+        return jsonify({'Error': error_msg}), 400
 
     # Create temporary image and perform transformations on it
-    image_filename = 'temp_image.{}'.format(image_format)
-    image_service.create_temp_image(file_storage_obj, image_filename)
-    image_model = ImageModel(image_filename, command_list)
-    image_service.transform(image_model)
-    b64_img_str = image_service.get_base64_encoding(image_filename)
-    image_service.delete_temp_image(image_filename)
+    filename = 'temp_image.{}'.format(image_format)
+    file_service.create_temp_image(file_storage_obj, filename)
+    ImageModel(filename, command_list).transform()
 
-    return views.image_render_html(b64_img_str), 200
+    # Store image file data in memory then delete it
+    file_data = file_service.get_file_data(filename)
+    file_service.delete_temp_image(filename)
 
+    return send_file(file_data, mimetype='image/{}'.format(image_format))
+
+
+def invalid_command_list(command_list):
+    """
+    Performs validation checks on the transformation command list. If it is
+    found to be invalid, an appropriate error message is returned.
+    :param command_list: transformation command list
+    :return: error message if command list is invalid, otherwise None if valid
+    """
+    for command, args in command_list.items():
+        # Any command that is not rotate or resize does not accept any arguments
+        if command not in {'rotate', 'resize'} and args:
+            return command + ': does not accept parameters'
+
+        # rotate must take a number argument
+        elif command == 'rotate' and not args.isnumeric():
+            return command + ': invalid value, must be an integer'
+
+        # resize must take a pair of numbers as an argument
+        elif command == 'resize':
+            try:
+                ImageModel.split_resize_args(args)
+            except ValueError:
+                return command + ': invalid value, must be a pair of integers ' \
+                                 'separated by a comma or space (width, height)'
+
+    return None
 
 if __name__ == '__main__':
     app.run(debug=True, port=55321)

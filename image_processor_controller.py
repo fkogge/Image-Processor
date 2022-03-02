@@ -3,7 +3,7 @@ API controller that provides the client-accessible endpoint which can be called
 in order to transform the client-provided image.
 
 Author: Francis Kogge
-02/28/2022
+Date: 03/01/2022
 """
 
 import file_service
@@ -22,11 +22,11 @@ def get_transformed_image():
     """
     API endpoint that transforms the client-supplied image (must be in a valid
     format). The image and transformation commands are supplied in the request
-    body. Sends back an HTML page to render the image encoded in base-64.
+    body. Returns the transformed image file.
     :return: HTTP response
-             - HTML page with base-64 encoded image, 200 (success)
-             - Error message, 400 (missing image, invalid image format, or
-               missing transformation commands
+             - 200 (successfully transformed image)
+             - 400 (missing or invalid image file, or missing or invalid
+                    transformation command)
     """
     # Validate file is in the request body
     if not request.files:
@@ -86,6 +86,7 @@ def invalid_command_list(command_list):
                                  'separated by a comma or space (width, height)'
 
     return None
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=55321)

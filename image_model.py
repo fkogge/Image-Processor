@@ -3,7 +3,7 @@ Data model for an image which consists of the image filename and the list of
 transformation commands.
 
 Author: Francis Kogge
-Date: 02/28/2022
+Date: 03/01/2022
 """
 
 from PIL import Image

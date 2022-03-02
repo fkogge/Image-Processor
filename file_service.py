@@ -3,7 +3,7 @@ Contains all file related operations: retrieving file format, creating/deleting
 file, and store file data to memory.
 
 Author: Francis Kogge
-Date: 02/28/2022
+Date: 03/01/2022
 """
 
 import os
